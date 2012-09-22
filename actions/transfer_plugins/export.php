@@ -11,3 +11,6 @@ header("Content-Disposition: attachment; filename=plugins.txt");
 header("Content-Type: text");
 
 echo $file;
+
+// don't try to forward.
+exit;

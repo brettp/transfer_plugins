@@ -11,25 +11,16 @@
  *	sliding forms on the "Tool Administration" page.
  */
 
-define('TRANSFER_PLUGINS_VERSION', 1.0);
+define('TRANSFER_PLUGINS_FORMAT', 2);
 
 function transfer_plugins_init() {
 	// actions
 	$plugin_path = dirname(__FILE__);
-	register_action('transfer_plugins/export', false, "$plugin_path/actions/transfer_plugins/export.php", true);
-	register_action('transfer_plugins/import', false, "$plugin_path/actions/transfer_plugins/import.php", true);
 
-	register_page_handler('transfer_plugins', 'transfer_plugins_page_handler');
-}
+	elgg_register_action('transfer_plugins/export', "$plugin_path/actions/transfer_plugins/export.php", 'admin');
+	elgg_register_action('transfer_plugins/import', "$plugin_path/actions/transfer_plugins/import.php", 'admin');
 
-/**
- * Serves the transfer plugins page
- */
-function transfer_plugins_page_handler($page) {
-	admin_gatekeeper();
-	set_context('admin');
-	include dirname(__FILE__) . '/pages/transfer_plugins/transfer.php';
-	return true;
+	elgg_register_admin_menu_item('configure', 'transfer_plugins', 'settings');
 }
 
 /**
@@ -40,30 +31,27 @@ function transfer_plugins_export() {
 	$info = array(
 		'elgg_version' => get_version(true),
 		'elgg_release' => get_version(false),
-		'transfer_plugins_version' => TRANSFER_PLUGINS_VERSION
+		'transfer_plugins_format' => TRANSFER_PLUGINS_FORMAT
 	);
 
-	$site = get_config('site');
-
-	// plugin order
-	$info['pluginorder'] = $site->pluginorder;
-
-	// active or inactive, @todo settings
 	$info['plugins'] = array();
-	$plugins = get_plugin_list();
+	$plugins = elgg_get_plugins('all');
 
-	foreach ($plugins as $plugin_id) {
+	foreach ($plugins as $plugin) {
 		$plugin_info = array(
-			'id' => $plugin_id,
-			'manifest' => load_plugin_manifest($plugin_id),
-			'active' => is_plugin_enabled($plugin_id)
+			'id' => $plugin->getID(),
+			'version' => $plugin->getManifest()->getVersion(),
+			'active' => (bool) $plugin->isActive(),
+			'settings' => $plugin->getAllSettings(),
+			'priority' => $plugin->getPriority()
 		);
 
-		$info['plugins'][] = $plugin_info;
+		$plugin_order[$plugin->getPriority() * 10] = $plugin->getID();
 
-//		$settings = find_plugin_settings($plugin_id);
-//		var_dump($settings);
+		$info['plugins'][] = $plugin_info;
 	}
+	
+	$info['17_pluginorder'] = serialize($plugin_order);
 
 	return serialize($info);
 }
@@ -71,28 +59,59 @@ function transfer_plugins_export() {
 /**
  * Import plugin settings
  *
- * @param type $info
+ * @param string $info
+ * @param string $settings_mode Options to load plugin settings. One of overwrite, if_not_exists, or ignore
  * @return type bool
  */
-function transfer_plugins_import($info) {
+function transfer_plugins_import($info, $settings_mode = 'if_not_exists') {
 	$info = unserialize($info);
-	// @todo check elgg, plugin, and transfer_plugin version compatibility.
 
-	if (!isset($info['pluginorder']) || !isset($info['plugins'])) {
+	if (!$info) {
 		return false;
 	}
 
-	$site = get_config('site');
-	$r = (bool) $site->pluginorder = $info['pluginorder'];
+	$version = elgg_extract('transfer_plugins_format', $info);
+
+	if ($version != TRANSFER_PLUGINS_FORMAT) {
+		return false;
+	}
+
+	// @todo check elgg, plugin, and transfer_plugin version compatibility.
+	if (!isset($info['plugins'])) {
+		return false;
+	}
+
+	$r = true;
 
 	foreach ($info['plugins'] as $plugin_info) {
 		$plugin_id = $plugin_info['id'];
-		$local_manifest = load_plugin_manifest($plugin_id);
-		if (!$local_manifest) {
+		$plugin = new ElggPlugin($plugin_id);
+		if (!$plugin) {
 			continue;
 		}
-		if ($plugin_info['active'] && !is_plugin_enabled($plugin_info['id'])) {
-			$r &= enable_plugin($plugin_info['id']);
+
+		$r &= $plugin->setPriority($plugin_info['priority']);
+		
+		if ($plugin_info['active'] && !$plugin->isActive()) {
+			$r &= $plugin->activate();
+		}
+
+		if ($settings_mode != 'ignore' && $plugin_info['settings']) {
+			foreach($plugin_info['settings'] as $name => $value) {
+				switch($settings_mode) {
+					case 'overwrite':
+						$plugin->setSetting($name, $value);
+						break;
+
+					case 'if_not_exists':
+						// @todo not sure if this works because isset isn't overloaded in ElggPlugin
+						if (!isset($plugin->$name)) {
+							$plugin->setSetting($name, $value);
+						}
+						break;
+				}
+				
+			}
 		}
 	}
 
