@@ -12,7 +12,13 @@ $en = array(
 
 	'transfer_plugins:export' => 'Export plugins',
 	'transfer_plugins:import' => 'Import plugins',
-	'transfer_plugins' => 'Transfer plugins'
+	'transfer_plugins' => 'Transfer plugins',
+
+
+	'transfer_plugins:settings_mode' => 'Plugin settings: ',
+	'transfer_plugins:settings_mode:ignore' => 'Do not import plugin settings',
+	'transfer_plugins:settings_mode:overwrite' => 'Import all settings, overwriting any settings on this installation',
+	'transfer_plugins:settings_mode:if_not_exists' => 'Import only settings that don\'t exist on this installation'
 );
 
 add_translation('en', $en);

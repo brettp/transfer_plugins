@@ -17,11 +17,22 @@ $button = elgg_view('input/submit', array(
 	'value' => elgg_echo('transfer_plugins:import')
 ));
 
+$settings_mode = elgg_view('input/pulldown', array(
+	'internalname' => 'settings_mode',
+	'options_values' => array(
+		'ignore' => elgg_echo('transfer_plugins:settings_mode:ignore'),
+		'overwrite' => elgg_echo('transfer_plugins:settings_mode:overwrite'),
+		'if_not_exists' => elgg_echo('transfer_plugins:settings_mode:if_not_exists'),
+	),
+	'value' => 'if_not_exists'
+));
+
 $form = elgg_view('input/form', array(
-	'body' => $input . '<br />' . $button,
+	'body' => $input . '<br />' . $settings_mode . '<br />' . $button,
 	'enctype' => 'multipart/form-data',
 	'action' => $vars['url'] . '/action/transfer_plugins/import'
 ));
+
 
 $title = elgg_echo('transfer_plugins');
 
