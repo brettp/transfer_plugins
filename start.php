@@ -86,7 +86,9 @@ function transfer_plugins_import($info, $settings_mode = 'if_not_exists') {
 	foreach ($info['plugins'] as $plugin_info) {
 		$plugin_id = $plugin_info['id'];
 		$plugin = new ElggPlugin($plugin_id);
-		if (!$plugin) {
+
+		// not installed
+		if (!$plugin->isValid()) {
 			continue;
 		}
 
