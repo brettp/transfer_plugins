@@ -37,20 +37,21 @@ function transfer_plugins_export() {
 	$info['plugins'] = array();
 	$plugins = elgg_get_plugins('all');
 
-	foreach ($plugins as $plugin) {
-		$plugin_info = array(
-			'id' => $plugin->getID(),
-			'version' => $plugin->getManifest()->getVersion(),
-			'active' => (bool) $plugin->isActive(),
-			'settings' => $plugin->getAllSettings(),
-			'priority' => $plugin->getPriority()
-		);
-
+  foreach ($plugins as $plugin) {
+    if(is_object($plugin) && is_object($plugin->getManifest())){
+		  $plugin_info = array(
+			  'id' => $plugin->getID(),
+			  'version' => $plugin->getManifest()->getVersion(),
+			  'active' => (bool) $plugin->isActive(),
+			  'settings' => $plugin->getAllSettings(),
+			  'priority' => $plugin->getPriority()
+	  	);
+    }
 		$plugin_order[$plugin->getPriority() * 10] = $plugin->getID();
 
 		$info['plugins'][] = $plugin_info;
 	}
-	
+
 	$info['17_pluginorder'] = serialize($plugin_order);
 
 	return serialize($info);
@@ -93,7 +94,7 @@ function transfer_plugins_import($info, $settings_mode = 'if_not_exists') {
 		}
 
 		$r &= $plugin->setPriority($plugin_info['priority']);
-		
+
 		if ($plugin_info['active'] && !$plugin->isActive()) {
 			$r &= $plugin->activate();
 		}
@@ -112,7 +113,7 @@ function transfer_plugins_import($info, $settings_mode = 'if_not_exists') {
 						}
 						break;
 				}
-				
+
 			}
 		}
 	}
