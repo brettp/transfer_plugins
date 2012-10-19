@@ -28,4 +28,7 @@ if (transfer_plugins_import($plugins, $settings_mode)) {
 	register_error(elgg_echo('transfer_plugins:import:could_not_import'));
 }
 
+elgg_invalidate_simplecache();
+elgg_reset_system_cache();
+
 forward(REFERRER);

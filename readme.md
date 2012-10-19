@@ -1,3 +1,3 @@
 Transfers plugin order and status between Elgg installations.
 
-1.7 only.
+1.8 only.
