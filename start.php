@@ -121,4 +121,4 @@ function transfer_plugins_import($info, $settings_mode = 'if_not_exists') {
 	return $r;
 }
 
-register_elgg_event_handler('init', 'system', 'transfer_plugins_init');
+elgg_register_event_handler('init', 'system', 'transfer_plugins_init');
